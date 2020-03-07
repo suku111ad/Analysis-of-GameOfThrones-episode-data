@@ -1,0 +1,763 @@
+---
+title: "GOT"
+author: Sukanya Aswini Dutta
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Reading Survey Data and libraries
+```{r, warning=FALSE, message=FALSE}
+#install.packages("readxl")
+```
+##library(readxl)
+```{r}
+##library(readxl)
+##gameofthrones <- read_excel("GOT_DATA.xlsx")
+gameofthrones <- read.csv('GOT_CSV.csv')
+library(dplyr)
+##useful_data <- select(got_data, -3, -7,-10) ##%>% filter(type == 'Imdb.rating')
+#summary(useful_data)
+
+###library(ggplot2)
+##ggplot(useful_data, )
+```
+```{r}
+head(gameofthrones)
+##ncol(data)
+```
+
+```{r}
+##head(data)
+NumberOfEpisodes <- nrow(gameofthrones)
+NumberOfEpisodes
+ncol(gameofthrones)
+```
+##```{r, warning=FALSE, message=FALSE}
+basic_eda <- function(gameofthrones)
+{
+ ## glimpse(gameofthrones)
+ ## df_status(got_data)
+ ## freq(got_data) 
+ ## profiling_num(got_data)
+##  plot_num(got_data)
+ ## describe(got_data)
+}
+basic_eda(got_data)
+##```
+
+```{r}
+#install.packages("funModeling")
+#install.packages("Hmisc")
+```
+```{r}
+library(funModeling)
+library(Hmisc)
+```
+```{r}
+df_status(gameofthrones)
+```
+
+```{r}
+##freq(data = got_data, input = c("Season", "Episode Number"))
+```
+
+# Exploratory Data Analysis
+
+```{r}
+EpisodePerSeason <- freq(gameofthrones$Season)
+```
+```{r}
+Director <- freq(gameofthrones$Director)
+```
+
+##```{r}
+got_data$Writer
+ab<-got_data$Writer[1] <- "xyz"
+ab
+```{r}
+Writer <- freq(gameofthrones$Writer)
+```
+
+```{r}
+NotableDeathCount <- freq(gameofthrones$Notable.Death.Count)
+```
+
+## One sample test
+
+```{r}
+x_bar <- mean(gameofthrones$Imdb.Rating)
+# null hypothesized population mean
+mu_0 <- 10
+# sample st. dev
+s <- sd(gameofthrones$Imdb.Rating)
+# sample size
+n <- length(gameofthrones$Imdb.Rating)
+# t-test test statistic
+t <- (x_bar - mu_0)/(s/sqrt(n))
+# two-sided p-value so multiply by 2
+two_sided_t_pval <- pt(q = t, df = n-1)*2
+two_sided_t_pval
+```
+
+## wrong graph but needed
+```{r}
+# plot a t-distribution with n-1 df
+plot(seq(-20, 20, .01), dt(seq(-20, 20, .01), n-1), type="l")
+# add the lines for my test statistic
+abline(v=c(t, -t))
+text(t,.025,"t=-17.389962",srt=0.2,pos=4)
+text(-t,.025,"t=17.389962",srt=0.2,pos=2)
+# add the lines for the t-critical value associated with alpha=0.05 and n-1 degrees of freedom
+# two-sided so in each tail we should have 2.5% of the probability
+abline(v=c(qt(0.025, n-1), qt(0.975, n-1)))
+text(qt(0.025, n-1), 0.07, "t=-2.042272",srt=0.2,pos=2)
+text(qt(0.975, n-1), 0.07, "t=2.042272",srt=0.2,pos=4)
+```
+
+## Confidence Interval
+```{r}
+# lower bound
+x_bar+(qt(0.025, n-1)*(s/sqrt(n))) 
+# alternately you can use x_bar-(qt(0.975, n-1)*(s/sqrt(n)))
+# upper bound
+x_bar+(qt(0.975, n-1)*(s/sqrt(n))) 
+# alternately you can use x_bar-(qt(0.025, n-1)*(s/sqrt(n)))
+```
+
+```{r}
+qqnorm(gameofthrones$Imdb.Rating)
+```
+
+##on
+##```{r}
+ggplot(got_data) +
+  geom_bar(aes(x = season, fill = season)) +
+  labs(x = '', y = '', title = 'Number') +
+  guides(fill = FALSE)
+##```
+
+##```{r, warning=FALSE, message=FALSE}
+##hist(data$Season)
+##```
+
+##```{r}
+# Pie Chart with Percentages
+
+pct <- (slices/sum()*100)
+lbls <- paste(lbls, pct) # add percents to labels
+lbls <- paste(lbls,"%",sep="") # ad % to labels
+pie(slices,labels = lbls, col=rainbow(length(lbls)),
+   main="Pie Chart of Countries")
+##```
+
+```{r, warning=FALSE, message=FALSE}
+hist(gameofthrones$Imdb.Rating, 
+ xlim = c(1, 10),##breaks = 5
+ col = "light blue")
+
+abline(v = mean(gameofthrones$Imdb.Rating, na.rm = T),
+            col = "red",
+            lwd = 2)
+```
+```{r, warning=FALSE, message=FALSE}
+Avg <- mean(gameofthrones$Imdb.Rating)
+cat("Average No of rating: " , Avg)
+```
+
+## One sample proportion
+Which season is most popular?
+Let's find all the seasons which have rating less than 9 and seasons which has maximum number of 9s
+
+```{r}
+MostPopular <- gameofthrones %>% select(1, 12)
+##MostPopular
+MostPopular$Imdb.Rating = as.integer(MostPopular$Imdb.Rating)
+
+MostPopular$Imdb.Rating[MostPopular$Imdb.Rating >= 9] = 'Popular'
+MostPopular$Imdb.Rating[MostPopular$Imdb.Rating < 9] = 'Not Popular'
+MostPopular
+```
+
+```{r}
+x = barplot(prop.table(table(MostPopular$Imdb.Rating)), main = 'Barplot of episode popularity', xlab = 'Imdb rating for season-wise ', ylab = 'Percentage of People', ylim = c(0,0.6))
+
+text(x, prop.table(table(MostPopular$Imdb.Rating)), labels = paste(round(prop.table(table(MostPopular$Imdb.Rating)), digits = 4)*100, "%") ,cex=1, col = "blue", pos = 1) 
+```
+
+
+Two sample t-test for difference in means
+(a) traditional statistical tools
+
+Is there a difference in the average ratings between different seasons. 
+
+
+```{r}
+MostViewer <- gameofthrones %>% select(8, 12)
+##MostPopular
+##MostViewer$US.viewers..million. = as.integer(MostPopular$US.viewers..million.)
+
+MostViewer$US.viewers..million.[MostViewer$US.viewers..million. >= 5.0] = 'Most Viewed'
+MostViewer$US.viewers..million.[MostViewer$US.viewers..million. < 5.0] = 'less viewed'
+MostViewer
+```
+
+#2 groups that are considered based on year
+```{r}
+groupMostViewed <- MostViewer %>%
+  filter(MostViewer$US.viewers..million. == 'Most Viewed')
+
+groupLessViewed <- MostViewer %>%
+  filter(MostViewer$US.viewers..million. == 'less viewed')
+# sample means
+x_bar_groupMostViewed <- mean(groupMostViewed$Imdb.ratings)
+x_bar_groupLessViewed <- mean(groupLessViewed$Imdb.ratings)
+```
+
+#making a dataframe for the required data
+##```{r}
+IMDByear<-data.frame(MostViewer$year <- as.numeric(as.integer(useful_data$year)),
+useful_data$imdbRating <- as.numeric(as.integer(useful_data$imdbRating)))
+colnames(IMDByear)<-c("Movie Year","IMDB Ratings")
+
+#converting to required data type
+newdata <- IMDByear %>% mutate_all(type.convert) %>% mutate_if(is.factor, as.character)
+#newdata
+
+set.seed(1)
+
+#2 groups that are considered based on year
+group1880to1970 <- newdata %>%
+  filter(newdata$`Movie Year` == (1880:1970))
+
+group1970to2019 <- newdata %>%
+  filter(newdata$`Movie Year` == (1970:2019))
+# sample means
+x_bar_group1880to1970 <- mean(group1880to1970$`IMDB Ratings`)
+x_bar_group1970to2019 <- mean(group1970to2019$`IMDB Ratings`)
+
+# null hypothesized population mean difference between the two groups
+mu_0 <- 0
+
+# sample variances
+s_group1880to1970_sq <- sd(group1880to1970$`IMDB Ratings`) ** 2
+s_group1970to2019_sq <- sd(group1970to2019$`IMDB Ratings`) ** 2
+
+# sample size
+n_group1880to1970 <- length(group1880to1970$`IMDB Ratings`)
+n_group1970to2019 <- length(group1970to2019$`IMDB Ratings`)
+
+# t-test test statistic
+t <- (x_bar_group1880to1970 - x_bar_group1970to2019 - mu_0)/sqrt((s_group1880to1970_sq/n_group1880to1970) + 
+(s_group1970to2019_sq/n_group1970to2019))
+t
+
+# one sided upper p-value
+two_sided_diff_t_pval <- pt(q = t, df = min(n_group1880to1970, n_group1970to2019)-1, lower.tail = TRUE)*2
+two_sided_diff_t_pval
+##```
+
+##```{r}
+# the parts of the test statistic
+# sample props
+p_hat_w <- sum(MostViewer$FT)/sum(MostViewer$FTA)
+p_hat_o <- sum(MostViewer$OppFT)/sum(MostViewer$OppFTA)
+# null hypothesized population prop difference between the two groups
+p_0 <- 0
+# sample size
+n_w <- sum(MostViewer$FTA)
+n_o <- sum(MostViewer$OppFTA)
+# sample variances
+den_p_w <- (p_hat_w*(1-p_hat_w))/n_w
+den_p_o <- (p_hat_o*(1-p_hat_o))/n_o
+# z-test test statistic
+z <- (p_hat_w - p_hat_o - p_0)/sqrt(den_p_w + den_p_o)
+# two sided p-value
+two_sided_diff_prop_pval <- pnorm(q = z, lower.tail = FALSE)*2
+two_sided_diff_prop_pval
+##```
+
+
+##chi-square test
+
+```{r}
+DeathCounts <- gameofthrones %>% select(1, 13)
+DeathCounts
+```
+```{r}
+##table(DeathCounts)
+prop.table(table(DeathCounts))
+```
+
+P1, P2, P3, P4, P5, P6, P7 = 0.14
+
+Sample size = 67
+```{r}
+67/0.14
+```
+```{r}
+sum(((table(DeathCounts) - 478.57)^2)/478.57)
+```
+```{r}
+pchisq(36716.18, df = 7-1, lower.tail = FALSE)
+```
+
+```{r}
+num_sims <- 100
+# A vector to store my results
+chisq_stats_under_H0 <- rep(NA, num_sims)
+# A loop for completing the simulation
+for(i in 1:num_sims){
+new_samp <- sample(DeathCounts, 67, replace = T)
+new_samp <- new_samp[!is.na(new_samp)]
+chisq_stats_under_H0[i] <- sum(((table(new_samp) - 478.57)^2)/478.57)
+}
+```
+
+```{r}
+hist(chisq_stats_under_H0, freq = FALSE,
+main='Dist. of the Chi-Square Statistic Under Null',
+xlab = 'Chi-Square Stat under Null',
+ylab = 'Density')
+abline(v=sum(((table(DeathCounts) - 478.57)^2)/478.57), col="red")
+```
+```{r}
+table(DeathCounts)
+```
+
+```{r}
+n = length(MostViewer$US.viewers..million.)
+n
+```
+
+* Sample size n = 67
+
+Here Null Hypothesis says that P = P0. So we have P = P0 = 0.5
+
+### Calculating P_hat 
+
+```{r}
+
+p0 = 0.5
+p_hat = length(subset(MostViewer$US.viewers..million., MostViewer$US.viewers..million. == 'MostViewed'))/length(MostViewer$US.viewers..million.)
+
+print(p_hat)
+
+```
+
+#### Confidence Intervals
+
+* The Confidence Intervals for the above are p_hat - E and p_hat + E. Where E is the Error.
+
+CI: (p_hat-E, p_hat+E)
+
+where
+E = z * sqrt(p_hat*q_hat / n)
+
+and We have q_hat = 1 - p_hat
+
+#### Our Confidence level is 95%
+
+Hence alpha = 0.05 and alpha/2 = 0.025
+Hence we have to calculate z-value for 1-0.025 = 0.975
+
+```{r}
+E = qnorm(0.975)*sqrt(p_hat*(1-p_hat)/n)
+print(E)
+
+```
+##### Hence the Error for the confodence interval is 0.12
+
+```{r}
+Lower_CI = p_hat - E
+Upper_CI = p_hat + E
+
+print(Lower_CI)
+print(Upper_CI)
+```
+##### Lower Confidence Interval = 0.34929
+##### Upper Confidence Interval = 0.59010
+
+#### We can say that, with 95% confidence, the population proportion of people who prefer coffee will definetly be in the range (0.349, 0.590)
+
+### Calculating Test Statistic
+
+```{r}
+z = (p_hat - p0)/sqrt(p0*(1-p0)/n)
+print(z)
+```
+
+### Calculating p-value
+
+```{r}
+
+p_value = 2*pnorm(z)
+print(p_value)
+
+```
+
+## p-value is 0.27 which greater than our confidence level 0.05
+### We fail to reject the Null Hypothesis
+
+# Statistical Analysis using Traditional Method
+
+*The Yates continuity correction is disabled for pedagogical reasons.
+```{r}
+finaltest = prop.test(length(subset(MostViewer$US.viewers..million., MostViewer$US.viewers..million. == 'MostViewed')), length(MostViewer$US.viewers..million.), p=0.5, correct=FALSE, alternative = "two.sided")
+
+finaltest
+
+```
+
+### The p_value obtained in the traditional test is also 0.6225. While it is greater than our confidence level 0.05, We interpret the following
+
+## There is a much higher probability (0.6225) that the null hypothesis (the proportion of people who prefer coffee is equal to the proportion of people who prefer Tea) is TRUE. when compared to our probability (0.05)
+
+## Hence we fail to reject the Null Hypothesis.
+
+##```{r}
+# Make the data
+warriors <- rep(c(1, 0), c(sum(GSWarriors$FT), n_w - sum(GSWarriors$FT)))
+opponents <- rep(c(1,0), c(sum(GSWarriors$OppFT), n_o - sum(GSWarriors$OppFT)))
+num_sims <- 10000
+# A vector to store my results
+results <- rep(NA, num_sims)
+# A loop for completing the simulation
+for(i in 1:num_sims){
+prop_war <- mean(sample(warriors,
+size = n_w,
+replace = TRUE))
+prop_opps <- mean(sample(x = opponents,
+size = n_o,
+replace = TRUE))
+results[i] <- prop_war - prop_opps
+}
+# Finally plot the results
+hist(results, freq = FALSE, main='Dist. of the Diff in Prop', xlab = 'Difference in Pro
+p. of Free Throws Made', ylab = 'Density')
+##```
+
+## One sample test of prop Bootstrap
+
+```{r}
+freq(MostViewer$US.viewers..million.)
+```
+
+67 episodes, out of which 42 are most viewed
+p_hat = .42
+
+n_p_hat = 
+
+```{r}
+67*(42/67)
+```
+
+n(1-p_hat) = 
+```{r}
+67* (25/67)
+```
+
+H_0 :P  = .5
+H_A :P > .5
+```{r}
+z <- (.42 - .5) / sqrt((.5*(1-.5)) / 67)
+z
+```
+
+Distribution of the test statistic
+```{r}
+binom.test(x=42, n = 67, p=(.5), alternative="greater")
+```
+
+```{r}
+pnorm(-1.30, lower.tail = FALSE)
+```
+
+Confidence Interval
+
+```{r}
+cat("exact binomial test")
+```
+```{r}
+binom.test(x=42, n = 67, p=(.5), alternative="greater")$conf.int
+```
+```{r}
+cat("normal approx")
+```
+
+```{r}
+c(.42 - (0.09)*sqrt(((.42)*(1-.42))/67), 1)
+```
+
+```{r}
+table(MostViewer)
+```
+```{r}
+# This is going to be easier to use for bootstrapping
+views <- rep(c(1, 0), c(42, 67-42))
+views
+```
+
+```{r}
+##This data is pretty skewed so even though n is large, I'm going to do a lot of simulations
+num_sims <- 10000
+# A vector to store my results
+results <- rep(NA, num_sims)
+# A loop for completing the simulation
+for(i in 1:num_sims){
+results[i] <- mean(sample(x = views,
+size = 67,
+replace = TRUE))
+}
+hist(results, freq = FALSE, main='Sampling Distribution of the Sample Proportion', xlab = 'Proportion of Views', ylab = 'Density')
+# estimate a normal curve over it - this looks pretty good!
+lines(x = seq(.35, .80, .001), dnorm(seq(.35, .80, .001), mean = mean(results), sd = sd
+(results)))
+```
+
+Using this sampling distribution to find the 5th and 95th percentiles and compare to the other methods.
+```{r}
+cat("Bootstrap Confidence Interval")
+```
+
+```{r}
+c(quantile(results, c(.05, 1)))
+```
+
+```{r}
+cat("exact binomial test")
+```
+
+```{r}
+binom.test(x=42, n = 67, p=(.5), alternative="greater")$conf.int
+```
+
+```{r}
+cat("normal approx")
+c(.42 - (0.09)*sqrt(((.42)*(1-.42))/67), 1)
+```
+
+```{r}
+# Under the assumption that the null hypothesis is true, we have 50% most viewed
+MostViewer <- rep(c(1, 0), c(50, 100-50))
+num_sims <- 10000
+# A vector to store my results
+results <- rep(NA, num_sims)
+# A loop for completing the simulation
+for(i in 1:num_sims){
+results[i] <- mean(sample(x = views,
+size = 67,
+replace = TRUE))
+}
+# Finally plot the results
+hist(results, freq = FALSE, main='Sampling Distribution of the Sample Proportion under H
+_0:p=0.5', xlab = 'Proportion of Views', ylab = 'Density')
+# estimate a normal curve over it - this looks pretty good!
+lines(x = seq(.35, .90, .001), dnorm(seq(.35, .90, .001), mean = mean(results), sd = sd
+(results)))
+abline(v=.42, col="red")
+```
+
+```{r}
+count_of_more_extreme_upper_tail <- sum(results >= .42)
+bootstrap_pvalue <- count_of_more_extreme_upper_tail/num_sims
+cat("Bootstrap p-value")
+```
+
+```{r}
+bootstrap_pvalue
+```
+
+```{r}
+cat("Exact Binomial p-value")
+```
+
+```{r}
+binom.test(x=42, n = 67, p=(.5), alternative="greater")$p.value
+```
+```{r}
+cat("Normal Approximation p-value")
+```
+```{r}
+pnorm(-1.39, lower.tail = FALSE)
+```
+
+##```{r}
+ViewervsRatings <- games
+##```
+
+```{r}
+ViewervsRatings <- gameofthrones %>% select(8, 12)
+ViewervsRatings$US.viewers..million.[ViewervsRatings$US.viewers..million. >= 5.0] = 'Most Viewed'
+ViewervsRatings$US.viewers..million.[ViewervsRatings$US.viewers..million. < 5.0] = 'less viewed'
+ViewervsRatings
+```
+
+## **Parameter**
+We are in interested in the difference between the
+p_mostviewedrating - p_lessviewedrating
+
+Hypotheses
+
+H_0: p_mostviewedrating - p_lessviewedrating = 0
+
+H_A: p_mostviewedrating - p_lessviewedrating ! = 0
+
+Sample Statistic
+
+p_mostviewedrating_hat - p_lessviewedrating_hat
+
+Distribution of the test statistic
+
+```{r}
+# the parts of the test statistic
+# sample props
+p_mostviewedrating_hat <- length(subset(ViewervsRatings$Imdb.Rating, ViewervsRatings$Imdb.Rating >= 9.0))/length(ViewervsRatings$Imdb.Rating)
+p_lessviewedrating_hat <- length(subset(ViewervsRatings$Imdb.Rating, ViewervsRatings$Imdb.Rating < 9.0))/length(ViewervsRatings$Imdb.Rating)
+# null hypothesized population prop difference between the two groups
+p_0 <- 0
+# sample size
+n_m <- length(subset(ViewervsRatings$Imdb.Rating, ViewervsRatings$Imdb.Rating >= 9.0))
+n_l <- length(subset(ViewervsRatings$Imdb.Rating, ViewervsRatings$Imdb.Rating < 9.0))
+# sample variances
+den_p_m <- (p_mostviewedrating_hat*(1-p_mostviewedrating_hat))/n_m
+den_p_l <- (p_lessviewedrating_hat*(1-p_lessviewedrating_hat))/n_l
+# z-test test statistic
+z <- (p_mostviewedrating_hat - p_lessviewedrating_hat - p_0)/sqrt(den_p_m + den_p_l)
+# two sided p-value
+two_sided_diffprop_pval <- pnorm(q = z, lower.tail = FALSE)*2
+two_sided_diffprop_pval
+```
+
+Confidence interval
+```{r}
+# lower bound
+(p_mostviewedrating_hat - p_lessviewedrating_hat)+(qnorm(0.025)*sqrt(den_p_m + den_p_l))
+```
+```{r}
+# upper bound
+(p_mostviewedrating_hat - p_lessviewedrating_hat)+(qnorm(0.975)*sqrt(den_p_m + den_p_l))
+```
+## not needed explain
+There is no evidence (p-value = 0.63703) to suggest that there is a difference between the true proportion of free
+throws made by the warriors compared to their opponent. We fail to reject the null hypothesis that the true
+proportion of free throws made by the warriors is equal to the true proportion of free throws made by their
+opponents. With 95% confidence the true population proportion difference is between 2.06% less free throws to
+3.37% more free throws made by the warriors than their opponents. The null hypothesized difference of 0 is in the
+confidence interval which agrees with our failure to reject the null hypothesis.
+
+```{r}
+qqnorm(ViewervsRatings$Imdb.Rating)
+```
+```{r}
+qqnorm(ViewervsRatings$Imdb.Rating[ViewervsRatings$US.viewers..million.=="Most Viewed"])
+```
+```{r}
+qqnorm(ViewervsRatings$Imdb.Rating[ViewervsRatings$US.viewers..million.=="less viewed"])
+```
+
+p-value and confidence interval
+Two-sided based on the alternate hypothesis
+
+```{r}
+t.test(ViewervsRatings$Imdb.Rating[ViewervsRatings$US.viewers..million.=="less viewed"], ViewervsRatings$Imdb.Rating[ViewervsRatings$US.viewers..million.=="Most Viewed"])
+```
+
+
+bootstrap approach.
+```{r}
+num_sims <- 10000
+# A vector to store my results
+results <- rep(NA, num_sims)
+# A loop for completing the simulation
+for(i in 1:num_sims){
+mean_mostviewed <- mean(sample(x = ViewervsRatings$Imdb.Rating[ViewervsRatings$US.viewers..million.=="Most Viewed"],
+size = 67,
+replace = TRUE))
+mean_lessviewed<- mean(sample(x = ViewervsRatings$Imdb.Rating[ViewervsRatings$US.viewers..million.=="less viewed"],
+size = 67,
+replace = TRUE))
+results[i] <- mean_mostviewed - mean_lessviewed
+}
+# Finally plot the results
+hist(results, freq = FALSE, main='Sampling Distribution of the Sample Mean', xlab = 'Ave
+range Difference view vs IMDBratings', ylab = 'Density')
+```
+
+```{r}
+# Bootstrap one-sided CI
+c(quantile(results, c(.025, .975)))
+```
+
+```{r}
+# compare to our t-methods
+t.test(ViewervsRatings$Imdb.Rating[ViewervsRatings$US.viewers..million.=="Most Viewed"], ViewervsRatings$Imdb.Rating[ViewervsRatings$US.viewers..million.=="less viewed"])$conf.int
+```
+
+```{r}
+# Check out the transform function used to shuffle
+transform(ViewervsRatings, US.viewers..million.=sample(US.viewers..million.))
+```
+
+```{r}
+num_sims <- 1000
+# A vector to store my results
+results_given_H0_true <- rep(NA, num_sims)
+# A loop for completing the simulation
+for(i in 1:num_sims){
+# idea here is if there is no relationshipm we should be able to shuffle the groups
+shuffled_groups <- transform(ViewervsRatings, Imdb.Rating=sample(Imdb.Rating))
+mean_mostviewed <- mean(shuffled_groups$Imdb.Rating[shuffled_groups$US.viewers..million.=="Most Viewed"])
+
+mean_lessviewed <- mean(shuffled_groups$Imdb.Rating[shuffled_groups$US.viewers..million.=="less viewed"])
+results_given_H0_true[i] <- mean_mostviewed - mean_lessviewed
+}
+# Finally plot the results
+hist(results_given_H0_true, freq = FALSE,
+main='Dist. of the Diff in Sample Means Under Null',
+xlab = 'Average Difference viewers vs IMDBratings under Null',
+ylab = 'Density')
+diff_in_sample_means <- mean(ViewervsRatings$Imdb.Rating[ViewervsRatings$US.viewers..million.=="Most Viewed"]) - mean(ViewervsRatings$Imdb.Rating[ViewervsRatings$US.viewers..million.=="less viewed"])
+abline(v=diff_in_sample_means, col = "blue")
+abline(v=abs(diff_in_sample_means), col = "red")
+```
+
+```{r}
+# counts of values more extreme than the test statistic in our original sample, given H0 is true
+# two sided given the alternate hypothesis
+count_of_more_extreme_lower_tail <- sum(results_given_H0_true <= diff_in_sample_means)
+count_of_more_extreme_upper_tail <- sum(results_given_H0_true >= abs(diff_in_sample_means))
+bootstrap_pvalue <- (count_of_more_extreme_lower_tail + count_of_more_extreme_upper_tail)/num_sims
+cat("Bootstrap p-value")
+```
+```{r}
+bootstrap_pvalue
+```
+```{r}
+cat("t-test p-value")
+```
+
+```{r}
+t.test(ViewervsRatings$Imdb.Rating[ViewervsRatings$US.viewers..million.=="Most Viewed"], ViewervsRatings$Imdb.Rating[ViewervsRatings$US.viewers..million.=="less viewed"])$p.value
+```
+
+
+
+```{r}
+p0 = 0.5
+##p_hat_u = length(MostPopular$Imdb.Rating)##/length(MostPopular$Imdb.Rating)
+##p_hat_s = length(MostPopular$Season)##/length(MostPopular$Season)
+
+p_hat_u = length(subset(MostPopular$Imdb.Rating, MostPopular$Imdb.Rating == 'Popular'))/length(subset(MostPopular$Imdb.Rating, MostPopular$Imdb.Rating == 'NotPopular'))
+p_hat_u = sum(MostPopular$Season, MostPopular$Season == 'Popular'))/length(subset(MostPopular$Imdb.Rating, MostPopular$Imdb.Rating == 'NotPopular'))
+
+p_hat_s = 
+print(p_hat)
+
+```
+
